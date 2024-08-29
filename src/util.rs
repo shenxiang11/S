@@ -67,9 +67,14 @@ pub fn list_files_with_type(path: PathBuf, server_path: &PathBuf) -> std::io::Re
 
         file_item.file_name = path.file_name().unwrap().to_str().unwrap().to_string();
 
+        println!("path: {:?}", path);
+        println!("server path: {:?}", server_path);
+
         let str = path.strip_prefix(server_path).unwrap().to_str().unwrap().to_string();
 
-        file_item.relative_url = str;
+        println!("str: {}", str);
+
+        file_item.relative_url = "/".to_owned() + &*str;
 
         if path.is_dir() {
             file_item.file_type = FileType::Folder;
