@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::{Path, PathBuf};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -54,7 +55,7 @@ pub enum FileType {
     Lambda,
 }
 
-pub fn list_files_with_type(path: &str) -> std::io::Result<Vec<FileItemInTpl>> {
+pub fn list_files_with_type(path: PathBuf, server_path: &PathBuf) -> std::io::Result<Vec<FileItemInTpl>> {
     let mut file_items: Vec<FileItemInTpl> = Vec::new();
     let entries = fs::read_dir(path)?; // 读取目录中的内容
 
@@ -66,10 +67,9 @@ pub fn list_files_with_type(path: &str) -> std::io::Result<Vec<FileItemInTpl>> {
 
         file_item.file_name = path.file_name().unwrap().to_str().unwrap().to_string();
 
-        let str = path.to_str().unwrap().to_string().chars().skip(1).collect();
-        file_item.relative_url = str;
+        let str = path.strip_prefix(server_path).unwrap().to_str().unwrap().to_string();
 
-        println!("{:?}", file_item);
+        file_item.relative_url = str;
 
         if path.is_dir() {
             file_item.file_type = FileType::Folder;
@@ -92,7 +92,7 @@ pub fn list_files_with_type(path: &str) -> std::io::Result<Vec<FileItemInTpl>> {
 }
 
 
-pub fn is_directory(path: &str) -> bool {
+pub fn is_directory(path: PathBuf) -> bool {
     if let Ok(metadata) = fs::metadata(path) {
         metadata.is_dir()
     } else {
@@ -100,3 +100,12 @@ pub fn is_directory(path: &str) -> bool {
     }
 }
 
+pub fn verify_path(path: &str) -> Result<PathBuf, &'static str> {
+    let p = Path::new(path);
+
+    if p.exists() && p.is_dir() {
+        Ok(path.into())
+    } else {
+        Err("Invalid path: path not exist or not a directory")
+    }
+}

@@ -1,35 +1,17 @@
 mod util;
 mod directory_interceptor;
+mod cli;
+mod fs_server;
 
-use axum::routing::get_service;
-use axum::Router;
-use serde::Serialize;
-use std::future::Future;
-use tower::{Layer, Service};
-use tower_http::services::ServeDir;
-
-use crate::directory_interceptor::DirectoryInterceptor;
+use clap::{Parser};
+use crate::cli::ServeArgs;
+use crate::fs_server::start_file_server;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let static_files = get_service(ServeDir::new("."))
-        .handle_error(|error| async move {
-            (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Unhandled internal error: {}", error),
-            )
-        })
-        .layer(DirectoryInterceptor);
+    let args = ServeArgs::parse();
 
-    let app = Router::new().nest_service("/", static_files);
-
-    let addr = "0.0.0.0:3000";
-
-    let listener = tokio::net::TcpListener::bind(addr).await?;
-
-    println!("Listening on {}", addr);
-
-    axum::serve(listener, app).await?;
+    start_file_server(args.directory, args.port).await?;
 
     Ok(())
 }
