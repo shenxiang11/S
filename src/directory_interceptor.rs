@@ -33,6 +33,8 @@ pub struct DirectoryInterceptorService<S> {
     app_state: Arc<AppState>,
 }
 
+const TPL: &[u8] = include_bytes!("../templates/directory.html");
+
 impl<S> Service<Request<Body>> for DirectoryInterceptorService<S>
 where
     S: Service<Request<Body>, Response = Response, Error = Infallible> + Clone + Send + 'static,
@@ -57,7 +59,7 @@ where
 
         if is_directory(relative_path.clone()) {
             let mut tera = Tera::default();
-            tera.add_template_file("templates/directory.html", Some("directory"))
+            tera.add_raw_template("directory", std::str::from_utf8(TPL).unwrap())
                 .unwrap();
 
             let file_items = list_files_with_type(relative_path, server_path).unwrap();
